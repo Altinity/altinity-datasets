@@ -1,0 +1,9 @@
+title: Wine Recognition Data
+description: >-
+  Wine data collected from Italy and published in paper by Forina, M. et al. 
+  "PARVUS - An Extendible Package for Data Exploration, Classification and 
+  Correlation." Commonly used to illustrate statistical and machine 
+  learning procedures. 
+size: 177 rows
+sources: 
+  - https://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.names
