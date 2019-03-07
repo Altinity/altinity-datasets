@@ -12,19 +12,19 @@ executable must be in the path to load data.
 Before starting you must install the altinity-datasets package using
 pip3. Here are two quick options.
 
-Install current version directly from Github/
+Install current version directly from Github:
 ```
 pip3 install --user git+https///github.com/altinity/altinity-datasets.git
 ```
 
-Install local source/
+Install local source:
 ```
 git clone https///github.com/altinity/altinity-datasets.git
 cd altinity-datasets
 python3 setup.py install --user
 ```
 
-To remove altinity-datasets run the following command/
+To remove altinity-datasets run the following command:
 ```
 pip3 uninstall altinity-datasets
 ```
@@ -60,7 +60,7 @@ ClickHouse server running on localhost.
 ad-cli load iris
 ```
 
-Here is a more complex example.  It loads the airplane dataset to the `air`
+Here is a more complex example.  It loads the airline dataset to the `air`
 database on a remote server.  Also, we parallize the upload with 10 threads. 
 ```
 ad-cli load airline --database=air --host=my.remote.host.com --parallel=10
@@ -78,7 +78,7 @@ same database they will be dropped as well.
 
 Repos are directories on the file system.  The exact location of the repo is 
 known as the repo path.  Data sets under the repo are child directories that
-in turn have subdirectors for DDL commands and data.  The following listing 
+in turn have subdirectories for DDL commands and data.  The following listing 
 shows the organization of the built-ins repo. 
 
 ```
@@ -110,7 +110,7 @@ built-ins/
 ```
 
 To create your own dataset copy the examples in built-ins.  The format is 
-is simple.  Here are a couple of notes to get you started. 
+is simple.  Here are notes to get you started. 
 
 * The manifest.yaml file describes the dataset.  If you put in extra fields 
   they will be ignored. 
