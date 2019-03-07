@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 
-import argparse
-import glob
-import os
-import re
 import subprocess
-import sys
 import time
+
 
 class ProcessPool:
     """Service for executing processes in parallel"""
+
     def __init__(self, size=5, dry_run=None):
         """Instantiate a new pool
         :param size: (int): Number of concurrent processes to run

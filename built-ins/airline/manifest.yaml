@@ -1,15 +1,15 @@
 title: Ontime and Airports dataset (Truncated)
 description: >-
-  Ontime data are from Airline On-Time Performance Data published by 
-  US Bureau of Transportation statistics. Airports data are from the 
+  Ontime data are from Airline On-Time Performance Data published by
+  US Bureau of Transportation statistics. Airports data are from the
   OpenFlights Airports Database. Users may join data from each table
   to translate 3-letter IATA codes in ontime table to full airport
-  name and location. 
+  name and location.
 size: 586179 rows (ontime) and 7544 rows (airports)
 sources: 
   - https://www.transtats.bts.gov/tables.asp?DB_ID=120
   - https://openflights.org/data.html
 notes: >-
-  This sample contains a single month of ontime data. To assemble full dataset 
-  copy all BTS ontime CSV files to the data/ontime directory.  Gzip is 
-  recommended to save space. 
+  This sample contains a single month of ontime data. To assemble full dataset
+  copy all BTS ontime CSV files to the data/ontime directory.  Gzip is
+  recommended to save space.
