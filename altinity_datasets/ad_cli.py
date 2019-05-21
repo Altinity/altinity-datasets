@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Altinity LTLD
+# Copyright (c) 2019 Altinity LTD
 #
 # This product is licensed to you under the
 # Apache License, Version 2.0 (the "License").
