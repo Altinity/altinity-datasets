@@ -9,6 +9,7 @@
 # code for the these subcomponents is subject to the terms and
 # conditions of the subcomponent's license, as noted in the LICENSE file.
 #
+import logging
 import platform
 
 import click
@@ -26,52 +27,71 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
     '--verbose',
     is_flag=True,
     default=False,
-    help='Print verbose output')
-def ad_cli(ctx, verbose):
+    help='Log debug output')
+@click.option(
+    '-L',
+    '--log-file',
+    default="datasets.log",
+    help='Set name of log file')
+def ad_cli(ctx, verbose, log_file):
     """Altinity Dataset CLI"""
     if ctx.invoked_subcommand is None:
         click.secho(ctx.get_help())
         return
+
+    if verbose:
+        logging.basicConfig(filename=log_file, level=logging.DEBUG)
+    else:
+        logging.basicConfig(filename=log_file, level=logging.INFO)
 
 
 @ad_cli.command(short_help='Show version')
 @click.pass_context
 def version(ctx):
     """Show version"""
-    # try:
-    version = pkg_resources.require("ds-cli")[0].version
-    # except:
-    #     version = '0.0'
-    version_string = 'ds-cli {0}, Python {1}'.format(version,
+    try:
+        version = pkg_resources.require("altinity-datasets")[0].version
+    except:
+        version = '0.0.0'
+    version_string = 'ad-cli {0}, Python {1}'.format(version,
                                                      platform.python_version())
     print(version_string)
 
-
-@ad_cli.command(short_help='List dataset repositories')
+@ad_cli.group(short_help='Manage dataset repositories')
 @click.pass_context
-def repos(ctx):
-    """Show available dataset repositories"""
+def repo(ctx):
+    """Operations to manage dataset repositories"""
+
+@repo.command(short_help='List dataset repositories')
+@click.pass_context
+def list(ctx):
+    """List dataset repositories"""
     repos = api.repos()
     _print_dict_vertical(repos, ['name', 'description', 'path'])
 
+@ad_cli.group(short_help="Manage datasets")
+@click.pass_context
+def dataset(ctx):
+    """Operations to dump, load, and search for datasets"""
+    pass
 
-@ad_cli.command(short_help='Search for dataset(s)')
+@dataset.command(short_help='Search for dataset(s)')
 @click.pass_context
 @click.argument('name', metavar='<name>', required=False)
 @click.option('-r', '--repo-path', help='Use this repo path')
-def search(ctx, name, repo_path):
-    datasets = api.search(name, repo_path=repo_path)
+@click.option('-f', '--full', help='Show full description')
+def search(ctx, name, repo_path, full):
+    datasets = api.dataset_search(name, repo_path=repo_path)
     _print_dict_vertical(datasets, [
         'name', 'title', 'description', 'size', 'sources',
         'notes', 'repo', 'path'
     ])
 
-
-@ad_cli.command(short_help='Load dataset')
+@dataset.command(short_help='Load a dataset from files to database')
 @click.pass_context
 @click.argument('name', metavar='<name>', required=True)
-@click.option('-r', '--repo_path', default='built-ins', help='Datasets repository')
-@click.option('-h', '--host', default='localhost', help='Server host')
+@click.option('-r', '--repo-path', default=None, help='Datasets repository')
+@click.option('-H', '--host', default='localhost', help='Server host')
 @click.option('-d', '--database', help='Database (defaults to dataset name)')
 @click.option('-P', '--parallel', default=5, help='Number of threads to run in parallel')
 @click.option(
@@ -83,14 +103,44 @@ def search(ctx, name, repo_path):
 @click.option(
     '-D', '--dry_run', is_flag=True, default=False, help='Print commands only')
 def load(ctx, name, repo_path, host, database, parallel, clean, dry_run):
-    api.load(
+    api.dataset_load(
         name,
         repo_path=repo_path,
         host=host,
         database=database,
         parallel=parallel,
         clean=clean,
-        dry_run=dry_run)
+        dry_run=dry_run,
+        progress_reporter=_print_progress)
+
+@dataset.command(short_help='Dump a live dataset from database to files')
+@click.pass_context
+@click.argument('name', metavar='<name>', required=True)
+@click.option('-r', '--repo-path', default='.', help='Datasets repository')
+@click.option('-H', '--host', default='localhost', help='Server host')
+@click.option('-d', '--database', help='Database (defaults to dataset name)')
+@click.option('-t', '--tables', help='Table selector regex (defaults to all')
+@click.option('-P', '--parallel', default=5, help='Number of threads to run in parallel')
+@click.option('-o', '--overwrite', is_flag=True, help='Overwrite existing files', default=False)
+@click.option('-c', '--compress', is_flag=True, help='Compress data files', default=False)
+@click.option(
+    '-D', '--dry_run', is_flag=True, default=False, help='Print commands only')
+def dump(ctx, name, repo_path, host, database, tables, parallel, overwrite, compress, dry_run):
+    api.dataset_dump(
+        name,
+        repo_path=repo_path,
+        host=host,
+        database=database,
+        table_regex=tables,
+        parallel=parallel,
+        overwrite=overwrite,
+        compress=compress,
+        dry_run=dry_run,
+        progress_reporter=_print_progress)
+
+def _print_progress(message):
+    """Progress reporting function for long-running operations"""
+    print(message)
 
 def _print_dict_vertical(dictionaries, columns):
     """Print dictionary contents vertically"""

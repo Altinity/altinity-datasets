@@ -9,25 +9,32 @@
 # code for the these subcomponents is subject to the terms and
 # conditions of the subcomponent's license, as noted in the LICENSE file.
 
+import logging
 import subprocess
 import time
 
+# Define logger
+logger = logging.getLogger(__name__)
 
 class ProcessPool:
     """Service for executing processes in parallel"""
 
-    def __init__(self, size=5, dry_run=None):
+    def __init__(self, size=5, dry_run=None, progress_reporter=None):
         """Instantiate a new pool
         :param size: (int): Number of concurrent processes to run
         :param dry_run: (boolean): If true just show what we would run
+        :param progress_reporter: (function): If specified call function with string message showing progress
         """
         self.size = size
-        self.slots = []
-        self.outputs = []
         if dry_run is None:
             self.dry_run = False
         else:
             self.dry_run = dry_run
+        self.progress_reporter=progress_reporter
+        self.slots = []
+        self.outputs = []
+        self.failed = 0
+        self.succeeded = 0
 
     def exec(self, command):
         """Submit a command for execution, blocking if pool is full
@@ -36,9 +43,9 @@ class ProcessPool:
         if len(self.slots) >= self.size:
             self._wait()
         if self.dry_run:
-            print("Dry run: " + command)
+            logger.info("Dry run: " + command)
         else:
-            print("Starting a new process: " + command)
+            logger.info("Starting a new process: " + command)
             process = subprocess.Popen(command, shell=True)
             self.slots.append(process)
 
@@ -48,7 +55,7 @@ class ProcessPool:
             self._wait()
 
     def _wait(self):
-        print("Waiting for command to finish")
+        logger.info("Waiting for command to finish")
         cur_len = len(self.slots)
         while cur_len > 0 and cur_len == len(self.slots):
             for p in self.slots:
@@ -56,12 +63,19 @@ class ProcessPool:
                 if status is None:
                     time.sleep(1)
                 elif status == 0:
-                    print("Process completed: {}".format(p.args))
+                    logger.info("Process completed: {}".format(p.args))
                     self.outputs.append(status)
+                    self.succeeded += 1
                     self.slots.remove(p)
                     break
                 else:
-                    print("Process failed: {}".format(p.args))
+                    self._progress_and_info("Process failed: {}".format(p.args))
                     self.outputs.append(status)
+                    self.failed += 1
                     self.slots.remove(p)
                     break
+
+    def _progress_and_info(self, message):
+        if self.progress_reporter is not None:
+            self.progress_reporter(message)
+        logger.info(message)

@@ -29,41 +29,46 @@ To remove altinity-datasets run the following command:
 pip3 uninstall altinity-datasets
 ```
 
-## Installing datasets.
+## Installing datasets
 
-The `ad-cli` command installs datasets.  Here is a short tutorial.  You can 
+The `ad-cli` command manages datasets.  Here is a short tutorial.  You can 
 see available commands by typing `ad-cli --help`. 
+
+### Listing repos
 
 Let's start by listing repos, which are locations that contain datasets. 
 
 ```
-ad-cli repos
+ad-cli repo list
 ```
 This will return a list of repos that have datasets.  For the time being there
 is just a built-in repo that is part of the altinity-datasets package. 
 
+### Finding datasets
+
 Next let's see the available datasets.  
 ```
-ad-cli search
+ad-cli dataset search
 ```
 This gives you a list of datasets with detailed descriptions.  You can 
 restrict the search to a single dataset by typing the name, for example
 `ad-cli search wine`.  You can also search other repos using the repo 
 file system location, e.g., `ad-cli search wine --repo-path=$HOME/myrepo`.
 
-Finally, let's load a dataset.  This currently only works with ClickHouse
+### Loading datasets
+Now, let's load a dataset.  This currently only works with ClickHouse
 servers that use the default user and unencrypted communications.  (See 
 limitations below.) Here's a command to load the iris dataset to a 
 ClickHouse server running on localhost. 
 
 ```
-ad-cli load iris
+ad-cli dataset load iris
 ```
 
-Here is a more complex example.  It loads the airline dataset to the `air`
+Here is a more complex example.  It loads the iris dataset to the `iris_new`
 database on a remote server.  Also, we parallize the upload with 10 threads. 
 ```
-ad-cli load airline --database=air --host=my.remote.host.com --parallel=10
+ad-cli load iris --database=iris_new --host=my.remote.host.com --parallel=10
 ```
 
 The command shown above is typical of the invocation when loading on a 
@@ -74,25 +79,35 @@ You can do this using `ad-cli load --clean`.  IMPORTANT:  This drops the
 database to get rid of dataset tables.  If you have other tables in the
 same database they will be dropped as well.
 
+### Dumping datasets
+
+You can make a dataset from any existing table or tables in ClickHouse 
+that reside in a single database.  Here's a simple example that shows 
+how to dump the weather dataset to create a new dataset. (The weather
+dataset is a built-in that loads by default to the weather database.)
+```
+ad-cli dataset dump weather
+```
+
+There are additional options to control dataset dumps.  For example,
+we can rename the dateset, restrict the dump to tables that start with
+'central', compress data, and overwrite any existing data in the output
+directory.
+
+```
+ad-cli dataset dump new_weather -d weather --tables='^central' --compress \
+  --overwrite
+```
+
 ## Repo and Dataset Format
 
 Repos are directories on the file system.  The exact location of the repo is 
 known as the repo path.  Data sets under the repo are child directories that
 in turn have subdirectories for DDL commands and data.  The following listing 
-shows the organization of the built-ins repo. 
+shows part of the organization of the built-ins repo. 
 
 ```
 built-ins/
-  airline/
-    data/
-      airports/
-        Airports.csv.gz
-      ontime/
-        On_Time_On_Time_Performance_2018_11.csv.gz
-    ddl/
-      airports.sql
-      ontime.sql
-    manifest.yaml
   iris/
     data/
       iris/

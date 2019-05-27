@@ -16,7 +16,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="altinity_datasets",
-    version="0.0.1",
+    version="0.1.0",
     description="Altinity Datasets for ClickHouse",
     install_requires=[
         'click>=6.7',

@@ -1,0 +1,1 @@
+CREATE TABLE central_park_weather_observations ( station_id String,  station_name String,  weather_date Date,  precipitation Float32,  snow_depth Float32,  snowfall Int32,  max_temperature Float32,  min_temperature Float32,  average_wind_speed Float32) ENGINE = MergeTree(weather_date, station_id, 8192)
