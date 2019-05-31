@@ -1,7 +1,7 @@
 # Altinity Datasets for ClickHouse
 
 Welcome!  `altinity-datasets` loads test datasets for ClickHouse.  It is 
-inspired by Python libraries that [automatically load standard datasets](https///scikit-learn.org/stable/modules/generated/sklearn.datasets.load_iris.html#sklearn.datasets.load_iris) 
+inspired by Python libraries that [automatically load standard datasets](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_iris.html#sklearn.datasets.load_iris) 
 for quick testing.  
 
 ## Getting Started
@@ -14,12 +14,12 @@ pip3. Here are two quick options.
 
 Install current version directly from Github:
 ```
-pip3 install --user git+https///github.com/altinity/altinity-datasets.git
+pip3 install --user git+https://github.com/altinity/altinity-datasets.git
 ```
 
 Install local source:
 ```
-git clone https///github.com/altinity/altinity-datasets.git
+git clone https://github.com/altinity/altinity-datasets.git
 cd altinity-datasets
 python3 setup.py install --user
 ```
