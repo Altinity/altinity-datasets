@@ -31,7 +31,7 @@ BUILT_INS = [
     {
         'name': 'built-ins',
         'description': 'Built-in dataset repository',
-        'path': os.path.realpath(os.path.join(BASE, 'built-ins'))
+        'path': os.path.realpath(os.path.join(BASE, 'altinity_datasets/built-ins'))
     },
 ]
 

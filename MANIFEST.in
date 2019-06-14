@@ -1,7 +1,9 @@
 # Manifest including built-in datasets.
+include README.md
+include LICENSE
+
+# Include contents of built-in datasets directory. 
+recursive-include altinity_datasets/built-ins *
 
 # Include all Python files.
 recursive-include altinity_datasets *.py
-
-# Include contents of built-in datasets directory. 
-graft built-ins 

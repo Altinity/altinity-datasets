@@ -10,18 +10,33 @@ Altinity-datasets requires Python 3.5 or greater. The `clickhouse-client`
 executable must be in the path to load data. 
 
 Before starting you must install the altinity-datasets package using
-pip3. Here are two quick options.
+pip3. First, set up a virtualy environment. 
 
-Install current version directly from Github:
 ```
-pip3 install --user git+https://github.com/altinity/altinity-datasets.git
+python3 -m venv my-env
+. my-env/bin/activate
 ```
 
-Install local source:
+Now there are two quick options.  Install current version directly from Github:
+```
+pip3 install git+https://github.com/altinity/altinity-datasets.git
+```
+
+Or, install local source. This is good for development. 
 ```
 git clone https://github.com/altinity/altinity-datasets.git
 cd altinity-datasets
-python3 setup.py install --user
+python3 setup.py develop 
+```
+
+You can also build an installable distribution:
+```
+# Get code and build source distribution. 
+git clone https://github.com/altinity/altinity-datasets.git
+cd altinity-datasets
+python3 setup.py sdist
+# Optionally copy somewhere else and install. 
+pip3 install dist/altinity_datasets-0.1.0.tar.gz
 ```
 
 To remove altinity-datasets run the following command:
@@ -29,7 +44,7 @@ To remove altinity-datasets run the following command:
 pip3 uninstall altinity-datasets
 ```
 
-## Installing datasets
+## Using datasets
 
 The `ad-cli` command manages datasets.  Here is a short tutorial.  You can 
 see available commands by typing `ad-cli --help`. 
@@ -124,8 +139,8 @@ built-ins/
     manifest.yaml
 ```
 
-To create your own dataset copy the examples in built-ins.  The format is 
-is simple.  Here are notes to get you started. 
+To create your own dataset you can dump existing tables using `ad-cli dataset 
+dump` or copy the examples in built-ins.  The format is is simple. 
 
 * The manifest.yaml file describes the dataset.  If you put in extra fields 
   they will be ignored. 
@@ -141,7 +156,19 @@ own repo run a load command and use the --repo-path option to point to the
 repo location.  Here's an example:
 
 ```
-ad-cli load mydataset --repo-path=$HOME/my-repo
+ad-cli dataset load mydataset --repo-path=$HOME/my-repo
+```
+
+## Development
+
+Code conventions are kind of lax for now.  Please keep the Python files 
+need and properly documented. 
+
+Run tests as follows with virtual environment set.  You will need a
+ClickHouse server with a null password on the default user.
+```
+cd tests
+python3 -m unittest -v
 ```
 
 ## Limitations
@@ -150,4 +177,4 @@ Really too many to mention but the most important are:
 
 * Database connection parameters are not supported yet.
 * There is no automatic way to populate large dataset like airline/ontime. 
-  You can add the extra .zip files yourself. 
+  You can add the extra data files yourself. 
