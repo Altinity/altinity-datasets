@@ -38,9 +38,10 @@ setup(
     url='https://github.com/Altinity/altinity-datasets',
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: Apache License",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
-        "Intended Audience :: Database Administrators",
+        "Intended Audience :: Developers",
+        "Intended Audience :: System Administrators",
     ],
     install_requires=[
         'click>=6.7',
