@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 class ApiTest(unittest.TestCase):
     def setUp(self):
         self.host = "localhost"
+        self.user = "special"
+        self.password = "secret"
         self.db = "altinity_ds_test"
         self.table = "^iris$"
 
@@ -82,6 +84,27 @@ class ApiTest(unittest.TestCase):
                 host=self.host,
                 database=db,
                 parallel=2)
+
+    def test_05_dataset_with_credentials(self):
+        """Dump and reload a dataset using a user name and password"""
+        self._removedirs("output/iris_test_user")
+        api.dataset_dump("iris_test_user", 
+            repo_path="output", 
+            host=self.host,
+            database=self.db,
+            user=self.user,
+            password=self.password,
+            parallel=2,
+            overwrite=True)
+        api.dataset_load("iris_test_user", 
+            repo_path="output", 
+            host=self.host,
+            database=self.db,
+            user=self.user,
+            password=self.password,
+            parallel=2,
+            clean=True)
+        self._removedirs("output/iris_test_user")
 
     def _removedirs(self, dir):
         if os.path.exists(dir):

@@ -12,27 +12,26 @@
 import logging
 import platform
 
-import click
-import pkg_resources
-
 import altinity_datasets.api as api
+
+import click
+
+import pkg_resources
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 @click.group(context_settings=CONTEXT_SETTINGS, invoke_without_command=True)
 @click.pass_context
-@click.option(
-    '-V',
-    '--verbose',
-    is_flag=True,
-    default=False,
-    help='Log debug output')
-@click.option(
-    '-L',
-    '--log-file',
-    default="datasets.log",
-    help='Set name of log file')
+@click.option('-V',
+              '--verbose',
+              is_flag=True,
+              default=False,
+              help='Log debug output')
+@click.option('-L',
+              '--log-file',
+              default="datasets.log",
+              help='Set name of log file')
 def ad_cli(ctx, verbose, log_file):
     """Altinity Dataset CLI"""
     if ctx.invoked_subcommand is None:
@@ -51,16 +50,18 @@ def version(ctx):
     """Show version"""
     try:
         version = pkg_resources.require("altinity-datasets")[0].version
-    except:
+    except Exception:
         version = '0.0.0'
     version_string = 'ad-cli {0}, Python {1}'.format(version,
                                                      platform.python_version())
     print(version_string)
 
+
 @ad_cli.group(short_help='Manage dataset repositories')
 @click.pass_context
 def repo(ctx):
     """Operations to manage dataset repositories"""
+
 
 @repo.command(short_help='List dataset repositories')
 @click.pass_context
@@ -69,11 +70,13 @@ def list(ctx):
     repos = api.repos()
     _print_dict_vertical(repos, ['name', 'description', 'path'])
 
+
 @ad_cli.group(short_help="Manage datasets")
 @click.pass_context
 def dataset(ctx):
     """Operations to dump, load, and search for datasets"""
     pass
+
 
 @dataset.command(short_help='Search for dataset(s)')
 @click.pass_context
@@ -83,64 +86,143 @@ def dataset(ctx):
 def search(ctx, name, repo_path, full):
     datasets = api.dataset_search(name, repo_path=repo_path)
     _print_dict_vertical(datasets, [
-        'name', 'title', 'description', 'size', 'sources',
-        'notes', 'repo', 'path'
+        'name', 'title', 'description', 'size', 'sources', 'notes', 'repo',
+        'path'
     ])
+
 
 @dataset.command(short_help='Load a dataset from files to database')
 @click.pass_context
 @click.argument('name', metavar='<name>', required=True)
+@click.option('-C',
+              '--clean',
+              is_flag=True,
+              default=False,
+              help='Clean existing database')
+@click.option('-d', '--database', help='Database [defaults to dataset name]')
+@click.option('-D',
+              '--dry_run',
+              is_flag=True,
+              default=False,
+              help='Print commands only')
+@click.option('-H',
+              '--host',
+              default='localhost',
+              help='Server host',
+              show_default=True)
+@click.option('-p', '--password', help='ClickHouse user name')
+@click.option('--parallel',
+              default=5,
+              show_default=True,
+              help='Number of threads to run in parallel')
+@click.option('-P',
+              '--port',
+              type=int,
+              help='Server port [Defaults to 9000 or 9443 depending on -s]')
 @click.option('-r', '--repo-path', default=None, help='Datasets repository')
-@click.option('-H', '--host', default='localhost', help='Server host')
-@click.option('-d', '--database', help='Database (defaults to dataset name)')
-@click.option('-P', '--parallel', default=5, help='Number of threads to run in parallel')
-@click.option(
-    '-C',
-    '--clean',
-    is_flag=True,
-    default=False,
-    help='Clean existing database')
-@click.option(
-    '-D', '--dry_run', is_flag=True, default=False, help='Print commands only')
-def load(ctx, name, repo_path, host, database, parallel, clean, dry_run):
-    api.dataset_load(
-        name,
-        repo_path=repo_path,
-        host=host,
-        database=database,
-        parallel=parallel,
-        clean=clean,
-        dry_run=dry_run,
-        progress_reporter=_print_progress)
+@click.option('-s',
+              '--secure',
+              is_flag=True,
+              default=False,
+              help='Use secure connection to server')
+@click.option('--verify/--no-verify',
+              is_flag=True,
+              default=True,
+              help='Verify certificate of secure connection')
+@click.option('-u',
+              '--user',
+              help='ClickHouse user name',
+              default='default',
+              show_default=True)
+def load(ctx, name, repo_path, host, port, secure, verify, user, password,
+         database, parallel, clean, dry_run):
+    api.dataset_load(name,
+                     repo_path=repo_path,
+                     host=host,
+                     port=port,
+                     secure=secure,
+                     verify=verify,
+                     user=user,
+                     password=password,
+                     database=database,
+                     parallel=parallel,
+                     clean=clean,
+                     dry_run=dry_run,
+                     progress_reporter=_print_progress)
+
 
 @dataset.command(short_help='Dump a live dataset from database to files')
 @click.pass_context
 @click.argument('name', metavar='<name>', required=True)
-@click.option('-r', '--repo-path', default='.', help='Datasets repository')
-@click.option('-H', '--host', default='localhost', help='Server host')
-@click.option('-d', '--database', help='Database (defaults to dataset name)')
+@click.option('-c',
+              '--compress',
+              is_flag=True,
+              help='Compress data files',
+              default=False)
+@click.option('-d', '--database', help='Database [defaults to dataset name]')
+@click.option('-D',
+              '--dry_run',
+              is_flag=True,
+              default=False,
+              help='Print commands only')
+@click.option('-H',
+              '--host',
+              default='localhost',
+              help='Server host',
+              show_default=True)
+@click.option('-o',
+              '--overwrite',
+              is_flag=True,
+              help='Overwrite existing files',
+              default=False)
+@click.option('-p', '--password', help='ClickHouse user name')
+@click.option('--parallel',
+              default=5,
+              show_default=True,
+              help='Number of threads to run in parallel')
+@click.option('-P',
+              '--port',
+              type=int,
+              help='Server port [Defaults to 9000 or 9443 depending on -s]')
+@click.option('-r', '--repo-path', default=None, help='Datasets repository')
+@click.option('-s',
+              '--secure',
+              is_flag=True,
+              default=False,
+              help='Use secure connection to server')
+@click.option('--verify/--no-verify',
+              is_flag=True,
+              default=True,
+              help='Verify certificate of secure connection')
 @click.option('-t', '--tables', help='Table selector regex (defaults to all')
-@click.option('-P', '--parallel', default=5, help='Number of threads to run in parallel')
-@click.option('-o', '--overwrite', is_flag=True, help='Overwrite existing files', default=False)
-@click.option('-c', '--compress', is_flag=True, help='Compress data files', default=False)
-@click.option(
-    '-D', '--dry_run', is_flag=True, default=False, help='Print commands only')
-def dump(ctx, name, repo_path, host, database, tables, parallel, overwrite, compress, dry_run):
-    api.dataset_dump(
-        name,
-        repo_path=repo_path,
-        host=host,
-        database=database,
-        table_regex=tables,
-        parallel=parallel,
-        overwrite=overwrite,
-        compress=compress,
-        dry_run=dry_run,
-        progress_reporter=_print_progress)
+@click.option('-u',
+              '--user',
+              help='ClickHouse user name',
+              default='default',
+              show_default=True)
+def dump(ctx, name, repo_path, host, port, secure, verify, user, password,
+         database, tables, parallel, overwrite, compress, dry_run):
+    api.dataset_dump(name,
+                     repo_path=repo_path,
+                     host=host,
+                     port=port,
+                     secure=secure,
+                     verify=verify,
+                     user=user,
+                     password=password,
+                     database=database,
+                     table_regex=tables,
+                     parallel=parallel,
+                     overwrite=overwrite,
+                     compress=compress,
+                     dry_run=dry_run,
+                     progress_reporter=_print_progress)
+
 
 def _print_progress(message):
     """Progress reporting function for long-running operations"""
     print(message)
+
 
 def _print_dict_vertical(dictionaries, columns):
     """Print dictionary contents vertically"""

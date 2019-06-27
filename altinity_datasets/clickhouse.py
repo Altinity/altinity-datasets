@@ -9,13 +9,10 @@
 # code for the these subcomponents is subject to the terms and
 # conditions of the subcomponent's license, as noted in the LICENSE file.
 
-import glob
 import logging
-import os
 import re
 
 from clickhouse_driver import Client
-
 """Implements a driver module for ClickHouse that encapsulates driver
    API calls and SQL execution conventions"""
 
@@ -25,16 +22,18 @@ logger = logging.getLogger(__name__)
 
 class TableData:
     """Metadata for a table in Clickhouse"""
-    def __init__(self, database, name, partition_key=None,
-                 sorting_key=None):
-       self.database = database
-       self.name = name
-       self.partition_key = partition_key
-       self.sorting_key = sorting_key
-       self.create_table = None
+
+    def __init__(self, database, name, partition_key=None, sorting_key=None):
+        self.database = database
+        self.name = name
+        self.partition_key = partition_key
+        self.sorting_key = sorting_key
+        self.create_table = None
+
 
 class ClientWrapper:
     """Context manager to allow use of ClickHouse connections in with clause"""
+
     def __init__(self, *args, **kwargs):
         self.client = Client(*args, **kwargs)
 
@@ -48,12 +47,30 @@ class ClientWrapper:
 
 class ClickHouse:
     """Connector class for ClickHouse data warehouse operations"""
-    def __init__(self, host='local_host', database='default'):
-        """Set up the connector
-        :param host: (str): ClickHouse server host 
-        :param database: (str): Database 
+
+    def __init__(self,
+                 host=None,
+                 port=None,
+                 secure=None,
+                 verify=None,
+                 user=None,
+                 password=None,
+                 database=None):
+        """Set up the connector.  Arguments have no defaults
+        :param host: (str): ClickHouse server host
+        :param port: (int): ClickHouse server port
+        :param secure: (int): If True use secure connection
+        :param verify: (int): If True verify secure connection certificate
+        :param user: (str): ClickHouse user
+        :param password: (str): ClickHouse password
+        :param database: (str): Default database
         """
         self.host = host
+        self.port = port
+        self.secure = secure
+        self.verify = verify
+        self.user = user
+        self.password = password
         self.database = database
 
     def fetch_tables(self, table_regex=None):
@@ -61,13 +78,16 @@ class ClickHouse:
         :param table_regex: (str): Regex to select tables
         :return: A list of Table instances
         """
-        # Connect to database and fetch tables. 
-        logger.info("Fetch tables from host: {0} database: {1}".format(self.host, self.database))
-        with ClientWrapper(self.host) as client:
-            table_query = "select name, partition_key, sorting_key from system.tables where database='{0}' and engine not like 'Materialized%' and name not like '.%'"
-            result, types = client.execute(
-                table_query.format(self.database), 
-                with_column_types=True)
+        # Connect to database and fetch tables.
+        logger.info("Fetch tables from host: {0} database: {1}".format(
+            self.host, self.database))
+        with self._get_wrapped_connection() as client:
+            table_query = ("select name, partition_key, sorting_key "
+                           "from system.tables where database='{0}' "
+                           "and engine not like 'Materialized%' "
+                           "and name not like '.%'")
+            result, types = client.execute(table_query.format(self.database),
+                                           with_column_types=True)
             tables = []
             for row in result:
                 name = row[0]
@@ -76,18 +96,20 @@ class ClickHouse:
                         continue
                 partition_key = row[1]
                 sorting_key = row[2]
-                table = TableData(self.database, name, partition_key, sorting_key)
+                table = TableData(self.database, name, partition_key,
+                                  sorting_key)
                 tables.append(table)
 
-        # Add CREATE TABLE definitions. 
-        with ClientWrapper(self.host, database=self.database) as client:
+        # Add CREATE TABLE definitions.
+        with self._get_wrapped_connection() as client:
             for table in tables:
                 # Fetch CREATE TABLE definition.
                 show_create_query = "show create table {0}"
                 result = client.execute(show_create_query.format(table.name))
                 for row in result:
-                    # Remove the database name. 
-                    pattern = re.compile('CREATE TABLE {0}\\.'.format(self.database))
+                    # Remove the database name.
+                    pattern = re.compile('CREATE TABLE {0}\\.'.format(
+                        self.database))
                     table.create_table = pattern.sub('CREATE TABLE ', row[0])
 
         return tables
@@ -97,8 +119,9 @@ class ClickHouse:
         :param table: (TableData): TableData instance with table data
         :return: Count of row
         """
-        with ClientWrapper(self.host, database=table.database) as client:
-            sql = "SELECT count(*) FROM {0}.{1}".format(table.database, table.name)
+        with self._get_wrapped_connection() as client:
+            sql = "SELECT count(*) FROM {0}.{1}".format(
+                table.database, table.name)
             count, _ = self._select_scalar(client, sql)
             return count
 
@@ -107,12 +130,14 @@ class ClickHouse:
         :param table: (TableData): TableData instance with table data
         :param format: (str): Output format
         :param collapse_partitions: If True merge small tables to one partition
-        :return: Array of tuple(partition_key, sql_statement). If table is collapsed or has no partitions the partition key will be None
+        :return: Array of tuple(partition_key, sql_statement). If table
+                 is collapsed or has no partitions the partition key will
+                 be None
         """
         partition_list = []
 
-        # If there is no partition key, return a select on all data including 
-        # a sort order if key is available. 
+        # If there is no partition key, return a select on all data including
+        # a sort order if key is available.
         if table.partition_key is None:
             sql = "SELECT * FROM {0}.{1}".format(table.database, table.name)
             if table.sorting_key is not None:
@@ -121,24 +146,30 @@ class ClickHouse:
             partition_list.append((None, sql))
         else:
             # Fetch keys and generate the type format. String types require
-            # quotes. 
-            with ClientWrapper(self.host, database=table.database) as client:
-                partition_sql = "SELECT {0} AS key FROM {1}.{2} GROUP BY key ORDER BY key".format(table.partition_key, table.database, table.name)
-                partition_keys, partition_key_type = self._select_array(client, partition_sql)
+            # quotes.
+            with self._get_wrapped_connection() as client:
+                partition_sql = ("SELECT {0} AS key FROM {1}.{2}"
+                                 " GROUP BY key ORDER BY key").format(
+                                     table.partition_key, table.database,
+                                     table.name)
+                partition_keys, partition_key_type = self._select_array(
+                    client, partition_sql)
 
             if partition_key_type == "String":
                 key_fmt = "'{0}'"
             else:
                 key_fmt = "{0}"
 
-            # Construct select template for partitioned data. 
-            partition_sql = "SELECT * FROM {0}.{1}".format(table.database, table.name)
-            partition_sql += " WHERE {0} = {1}".format(table.partition_key, key_fmt)
+            # Construct select template for partitioned data.
+            partition_sql = "SELECT * FROM {0}.{1}".format(
+                table.database, table.name)
+            partition_sql += " WHERE {0} = {1}".format(table.partition_key,
+                                                       key_fmt)
             if table.sorting_key is not None:
                 partition_sql += " ORDER BY {0}".format(table.sorting_key)
             partition_sql += " FORMAT {0}".format(format)
 
-            # Generate SQL statements. 
+            # Generate SQL statements.
             for key in partition_keys:
                 if partition_key_type == "String":
                     key = key.replace("'", "\\'")
@@ -148,11 +179,31 @@ class ClickHouse:
 
     def execute(self, sql, verbose=False, dry_run=False):
         """Execute a SQL query"""
-        with ClientWrapper(self.host, database=self.database) as client:
+        with self._get_wrapped_connection() as client:
             if verbose:
                 logger.debug("SQL: {0}".format(sql))
             if not dry_run:
                 return client.execute(sql)
+
+    def _get_wrapped_connection(self):
+        """Create connection using available non-null arguments"""
+        kwargs = {}
+        if self.host:
+            kwargs['host'] = self.host
+        if self.port:
+            kwargs['port'] = self.port
+        if self.secure:
+            kwargs['secure'] = self.secure
+        # Note: False is an allowed value, so we check for None.
+        if self.verify is not None:
+            kwargs['verify'] = self.verify
+        if self.user:
+            kwargs['user'] = self.user
+        if self.password:
+            kwargs['password'] = self.password
+        if self.database:
+            kwargs['database'] = self.database
+        return ClientWrapper(**kwargs)
 
     def _select_array(self, conn, sql):
         """Return select on a single column as an array
@@ -174,6 +225,5 @@ class ClickHouse:
         :return: Tuple with two elements: scalar value and SQL type
         """
         result, types = conn.execute(sql, with_column_types=True)
-        array = []
         for row in result:
             return row[0], types[0][1]

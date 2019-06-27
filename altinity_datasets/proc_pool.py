@@ -16,6 +16,7 @@ import time
 # Define logger
 logger = logging.getLogger(__name__)
 
+
 class ProcessPool:
     """Service for executing processes in parallel"""
 
@@ -23,14 +24,15 @@ class ProcessPool:
         """Instantiate a new pool
         :param size: (int): Number of concurrent processes to run
         :param dry_run: (boolean): If true just show what we would run
-        :param progress_reporter: (function): If specified call function with string message showing progress
+        :param progress_reporter: (function): If specified call function with
+                                              string message showing progress
         """
         self.size = size
         if dry_run is None:
             self.dry_run = False
         else:
             self.dry_run = dry_run
-        self.progress_reporter=progress_reporter
+        self.progress_reporter = progress_reporter
         self.slots = []
         self.outputs = []
         self.failed = 0
@@ -69,7 +71,8 @@ class ProcessPool:
                     self.slots.remove(p)
                     break
                 else:
-                    self._progress_and_info("Process failed: {}".format(p.args))
+                    self._progress_and_info("Process failed: {}".format(
+                        p.args))
                     self.outputs.append(status)
                     self.failed += 1
                     self.slots.remove(p)

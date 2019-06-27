@@ -10,35 +10,18 @@ Altinity-datasets requires Python 3.5 or greater. The `clickhouse-client`
 executable must be in the path to load data. 
 
 Before starting you must install the altinity-datasets package using
-pip3. First, set up a virtualy environment. 
+pip3. Following example shows install into a Python virtual environment.
 
 ```
 python3 -m venv my-env
 . my-env/bin/activate
+pip3 install altinity-datasets
 ```
 
-Now there are two quick options.  Install current version directly from Github:
+You can also install a current version directly from Github:
 ```
 pip3 install git+https://github.com/altinity/altinity-datasets.git
 ```
-
-Or, install local source. This is good for development. 
-```
-git clone https://github.com/altinity/altinity-datasets.git
-cd altinity-datasets
-python3 setup.py develop 
-```
-
-You can also build an installable distribution:
-```
-# Get code and build source distribution. 
-git clone https://github.com/altinity/altinity-datasets.git
-cd altinity-datasets
-python3 setup.py sdist
-# Optionally copy somewhere else and install. 
-pip3 install dist/altinity_datasets-0.1.0.tar.gz
-```
-
 To remove altinity-datasets run the following command:
 ```
 pip3 uninstall altinity-datasets
@@ -46,8 +29,8 @@ pip3 uninstall altinity-datasets
 
 ## Using datasets
 
-The `ad-cli` command manages datasets.  Here is a short tutorial.  You can 
-see available commands by typing `ad-cli --help`. 
+The `ad-cli` command manages datasets.  You can see available commands by
+typing `ad-cli -h/--help`. All subcommands also accept -h/--help options.
 
 ### Listing repos
 
@@ -56,6 +39,7 @@ Let's start by listing repos, which are locations that contain datasets.
 ```
 ad-cli repo list
 ```
+
 This will return a list of repos that have datasets.  For the time being there
 is just a built-in repo that is part of the altinity-datasets package. 
 
@@ -71,10 +55,9 @@ restrict the search to a single dataset by typing the name, for example
 file system location, e.g., `ad-cli search wine --repo-path=$HOME/myrepo`.
 
 ### Loading datasets
-Now, let's load a dataset.  This currently only works with ClickHouse
-servers that use the default user and unencrypted communications.  (See 
-limitations below.) Here's a command to load the iris dataset to a 
-ClickHouse server running on localhost. 
+
+Now, let's load a dataset.  Here's a command to load the iris dataset
+to a ClickHouse server running on localhost.
 
 ```
 ad-cli dataset load iris
@@ -100,6 +83,7 @@ You can make a dataset from any existing table or tables in ClickHouse
 that reside in a single database.  Here's a simple example that shows 
 how to dump the weather dataset to create a new dataset. (The weather
 dataset is a built-in that loads by default to the weather database.)
+
 ```
 ad-cli dataset dump weather
 ```
@@ -113,6 +97,24 @@ directory.
 ad-cli dataset dump new_weather -d weather --tables='^central' --compress \
   --overwrite
 ```
+
+### Extra Connection Options
+
+The dataset load and dump commands by default connect to ClickHouse
+running on localhost with default user and empty password. The following
+example options connect using encrypted communications to a specific
+server with explicit user name and password. The last option suppresses
+certificate verification.  
+
+```
+ad-cli dataset load iris -H 127.0.0.1 -P 9440 \
+-u special -p secret --secure --no-verify 
+```
+
+Note: To use --no-verify you must also ensure that clickhouse-client is
+configured to accept invalid certificates. Validate by logging in using
+clickhouse-client with the --secure option.  Check and correct settings
+in /etc/clickhouse-client/config.xml if you have problems.
 
 ## Repo and Dataset Format
 
@@ -161,6 +163,27 @@ ad-cli dataset load mydataset --repo-path=$HOME/my-repo
 
 ## Development
 
+To work on altinity-datasets clone from Github and install.  
+```
+git clone https://github.com/altinity/altinity-datasets.git
+cd altinity-datasets
+python3 setup.py develop 
+```
+
+After making changes you should run tests.
+```
+cd tests
+python3 -m unittest --verbose
+```
+
+The following commands build an installable and push to pypi.org.
+PyPI account credentials must be set in TWINE_USERNAME and TWINE_PASSWORD.
+
+```
+python3 setup.py sdist
+twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
+```
+
 Code conventions are kind of lax for now.  Please keep the Python files 
 need and properly documented. 
 
@@ -173,8 +196,14 @@ python3 -m unittest -v
 
 ## Limitations
 
-Really too many to mention but the most important are:
+The most important are:
 
-* Database connection parameters are not supported yet.
+* Error handling is spotty. If clickhouse-client is not in the path 
+  things may fail mysteriously. 
 * There is no automatic way to populate large dataset like airline/ontime. 
   You can add the extra data files yourself. 
+* Datasets have to be on the local file system.  In the future we will 
+  use cloud object storage such as S3.
+
+Please file issues at https://github.com/Altinity/altinity-datasets/issues.
+Pull requests to fix problems are welcome. 
