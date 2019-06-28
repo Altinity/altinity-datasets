@@ -10,7 +10,17 @@ Altinity-datasets requires Python 3.5 or greater. The `clickhouse-client`
 executable must be in the path to load data. 
 
 Before starting you must install the altinity-datasets package using
-pip3. Following example shows install into a Python virtual environment.
+pip3. Following example shows install into a Python virtual environment. 
+First command is only required if you don't have clickhouse-client already
+installed on the host. 
+
+```
+sudo apt install clickhouse-client
+sudo pip3 install altinity-datasets
+```
+
+Many users will prefer to install within a Python3 virtual environment, 
+for example:
 
 ```
 python3 -m venv my-env
@@ -184,14 +194,57 @@ python3 setup.py sdist
 twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
 ```
 
-Code conventions are kind of lax for now.  Please keep the Python files 
-need and properly documented. 
+Code conventions are enforced using yapf and flake8. Run the
+dev-format-code.sh script to check formatting.
 
 Run tests as follows with virtual environment set.  You will need a
 ClickHouse server with a null password on the default user.
+
 ```
 cd tests
 python3 -m unittest -v
+```
+
+## Errors
+
+### Out-of-date pip3 causes installation failure
+
+If pip3 installs with the message `error: invalid command 'bdist_wheel'` you 
+may need to upgrade pip.  Run `pip3 install --upgrade pip` to correct the
+problem. 
+
+### Materialized views cannot be dumped
+
+ad-cli will fail with an error if you try to dump a database that has
+materialized views. The workaround is to omit them from the dump operation 
+using a table regex as shown in the following example: 
+
+```
+ad-cli dataset dump nyc_taxi_rides --repo-path=.  --compress --parallel=6 \
+--tables='^(tripdata|taxi_zones|central_park_weather_observations)$'
+```
+
+### --no-verify option fails on self-signed certs
+
+When using ad-cli --secure together with --no-verify options you need
+to also configure clickhouse-client to skip certificate verification.
+This only applies when the certificate is self-signed.  You must
+change /etc/clickhouse-client/config.xml as follows to skip certificate
+validation:
+
+```
+<config>
+    <openSSL>
+        <client> <!-- Used for connection to server's secure tcp port -->
+            ...
+            <invalidCertificateHandler>
+                <name>AcceptCertificateHandler</name>
+            </invalidCertificateHandler>
+        </client>
+    </openSSL>
+    ...
+</config>
+
 ```
 
 ## Limitations
@@ -200,8 +253,6 @@ The most important are:
 
 * Error handling is spotty. If clickhouse-client is not in the path 
   things may fail mysteriously. 
-* There is no automatic way to populate large dataset like airline/ontime. 
-  You can add the extra data files yourself. 
 * Datasets have to be on the local file system.  In the future we will 
   use cloud object storage such as S3.
 
