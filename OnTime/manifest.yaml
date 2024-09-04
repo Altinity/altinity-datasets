@@ -1,0 +1,16 @@
+title: Airline ontime dataset
+description: >-
+  Airline on-time statistics from the US Bureau of Transportation 
+  Statistics. Tracks flight data for all major US airline flights 
+  starting in January 1995. Also contains an additional table with 
+  locations and full names of airports.
+size:  220M rows
+sources:
+  - https://www.transtats.bts.gov/ONTIME/
+  - https://openflights.org/data.html
+parquet:
+  - s3://altinity-clickhouse-data/airline/data/ontime_parquet2/
+parquet_hive:
+  - s3://altinity-clickhouse-data/airline/data/ontime_parquet3/
+mergetree:
+  - s3://altinity-clickhouse-data/airline/data/ontime_plain_rewritable/
