@@ -11,7 +11,7 @@ show create table default.btc_transactions;
 --drop table default.btc_transactions;
 CREATE TABLE default.btc_transactions
 (
-    `hash` Nullable(String),
+    `hash` String,
     `version` Nullable(Int64),
     `size` Nullable(Int64),
     `block_hash` String,
@@ -51,8 +51,8 @@ CREATE TABLE default.btc_transactions
 )
 ENGINE = MergeTree
 partition by toYYYYMM(date)
-order by block_hash
-settings non_replicated_deduplication_window=100
+order by (date,block_hash,hash)
+settings non_replicated_deduplication_window=1000
 ;
 -- s3queue stuff
 --drop table default.btc_transactions_queue;
@@ -96,7 +96,7 @@ create table default.btc_transactions_queue
         type Nullable(String),
         value Nullable(Float64)))
 )
-ENGINE = S3Queue('s3://aws-public-blockchain/v1.0/btc/transactions/*/part-00000-*.parquet', 'NOSIGN', 'Parquet')
+ENGINE = S3Queue('s3://aws-public-blockchain/v1.0/btc/transactions/date=2024-*/part-00000-*.parquet', 'NOSIGN', 'Parquet')
 SETTINGS mode = 'ordered',
             keeper_path = '/s3queue/blockchain/v1.0/btc',
             date_time_input_format='best_effort',
@@ -104,7 +104,7 @@ SETTINGS mode = 'ordered',
             polling_min_timeout_ms = 300000,
             polling_max_timeout_ms = 600000,
             max_processed_files_before_commit=1,
-            processing_threads_num = 5,
+            processing_threads_num = 1,
             loading_retries = 10
 ;
 --drop view default.btc_transactions_mv;
