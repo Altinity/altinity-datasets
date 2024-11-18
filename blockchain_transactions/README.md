@@ -37,3 +37,22 @@ Need to denormalize schema to store less data for wallet addresses and script/as
 
 schema inference creates Array(Tuple()), but we need Nested.
 so we have to use indexes like output.1 in transformations
+
+
+### datetime
+
+- date_time_input_format='best_effort',
+- block_timestamp have only seconds
+- last_modified have only 6 digits after comma
+- date column not needed
+
+### versions
+
+2009 - no input column
+2018 - added txinwitness array to input column
+
+### problems
+- any error in MV leave particular file in Processing state forever - https://github.com/ClickHouse/ClickHouse/issues/70951
+- duplicates on retries
+
+
