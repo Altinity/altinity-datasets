@@ -71,7 +71,7 @@ ORDER BY (counterid, userid, sessionid, timestamp)
 SAMPLE BY userid; 
 ```
 
-- **date** - column contain date part of timestamp. (It's quite common practice in ClickHouse to store date part of the timestamp separately. That allows to improve the speed of scan by date (twice less data to scan), and also having date field make it the natural choice for using as a partition key)
+- **date** - column contain date part of timestamp. 
 - **counterid** - is not used (we have only one online store in the table) and is always 1.
 - **timestamp** - the time of the page hit
 - **userid** is cookie-based user identificator.
